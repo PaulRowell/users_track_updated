@@ -1,0 +1,4 @@
+name = Users Track Updated
+description = Adds the ability to track when users were updated and stops the overwriting of user data.
+core = 7.x
+package = "Users"

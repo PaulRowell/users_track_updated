@@ -1,0 +1,7 @@
+<?php
+
+/**
+ * @file
+ * Protects user form data from being overridden in case of multiple people 
+ * editing the same user.
+ */
