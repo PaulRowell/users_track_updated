@@ -4,4 +4,37 @@
  * @file
  * Install, update and uninstall functions for the users_track_updated module.
  */
+function users_track_updated_schema() {
+
+  $schema['users_track_updated'] = array(
+    'description' => 'Tracks dates against user updates',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The uid of the user being updated',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the user was most recently saved.',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+      'changed' => array('changed'),
+    ),
+    'foreign keys' => array(
+      'uid' => array(
+        'table' => 'user',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+     'primary key' => array('uid'),
+  );
+
+  return $schema;
+}
 
