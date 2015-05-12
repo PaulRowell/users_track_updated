@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Protects user form data from being overridden in case of multiple people 
+ * editing the same user.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Form ID: user_profile_form.
+ */
+function users_track_updated_form_user_profile_form_alter(&$form, &$form_state) {
+  $form['#changed'] = time();
+  $form['#validate'][] = 'users_track_updated_validate_user';
+}
+
+/**
+ * Custom validation function to see of the user form has been updated since 
+ * current edit.
+ */
+function users_track_updated_validate_user($form, &$form_state) {
+  
+  // Get the last changed (if exists).
+  $updated = users_track_updated_user_last_changed($form_state['user']->uid);
+  
+  if (isset($form_state['user']->uid) && ($updated > $form['#changed'])) {
+    form_set_error('changed', t('The content on this page has either been modified by another user, or you have already submitted modifications using this form. As a result, your changes cannot be saved.'));
+  }
+}
+
+
+/**
+ * Implements hook_user_insert().
+ */
+function users_track_updated_user_insert(&$edit, $account, $category) {
+  users_track_updated_insert_user_updated($account->uid, $account->created);
+}
+
+/**
+ * Implements hook_user_update().
+ */
+function users_track_updated_user_update(&$edit, $account, $category) {
+  $timestamp = time();
+  users_track_updated_insert_user_updated($account->uid, $timestamp);
+}
+
+/**
+ * Function to insert/update the updated time and uid.
+ * @param int $uid.
+ * @param int $timestamp.
+ */
+function users_track_updated_insert_user_updated($uid, $timestamp = NULL) {
+  if ($timestamp === NULL) {
+    $timestamp = time();
+  }
+
+  // Check if the user exists there
+  $existing_user = db_select('users_track_updated', 'utu')
+      ->fields('utu', array('uid'))
+      ->condition('utu.uid', $uid)
+      ->execute()
+      ->fetchCol();
+
+  if (empty($existing_user)) {
+    // New user.
+    // Simple insert.
+    db_insert('users_track_updated')
+        ->fields(array(
+          'uid' => $uid,
+          'changed' => $timestamp,
+        ))
+        ->execute();
+  }
+  else {
+    db_update('users_track_updated')
+        ->fields(array('changed' => $timestamp))
+        ->condition('uid', $uid, '=')
+        ->execute();
+  }
+}
+
+/**
+ * Function to get the last time a user was updated
+ * @param int $uid
+ * @return int
+ */
+function users_track_updated_user_last_changed($uid) {
+  return db_query('SELECT changed FROM {users_track_updated} WHERE uid = :uid', array(':uid' => $uid))->fetch()->changed;
+}
